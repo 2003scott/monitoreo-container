@@ -1,0 +1,76 @@
+services:
+  checkmk:
+    image: checkmk/check-mk-community:2.5.0p2
+    container_name: monitoring
+    ports:
+      - "8080:5000"
+      - "8000:8000"
+    tmpfs:
+      - /opt/omd/sites/cmk/tmp:uid=1000,gid=1000
+    volumes:
+      - monitoring:/omd/sites
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: always
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: cmk
+      MYSQL_PASSWORD: cmkpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: always
+
+  passbolt_db:
+    image: mariadb:10.11
+    container_name: passbolt_db
+    restart: always
+
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: passbolt
+      MYSQL_USER: passbolt
+      MYSQL_PASSWORD: passboltpass
+
+    volumes:
+      - passbolt_data:/var/lib/mysql
+
+    networks:
+      - app_network
+
+  passbolt:
+    image: passbolt/passbolt:latest-ce
+    container_name: passbolt_app
+    restart: always
+
+    depends_on:
+      - passbolt_db
+
+    ports:
+      - "9797:80"
+
+    environment:
+      APP_FULL_BASE_URL: http://localhost:9797
+
+      DATASOURCES_DEFAULT_HOST: passbolt_db
+      DATASOURCES_DEFAULT_USERNAME: passbolt
+      DATASOURCES_DEFAULT_PASSWORD: passboltpass
+      DATASOURCES_DEFAULT_DATABASE: passbolt
+      DATASOURCES_DEFAULT_DRIVER: Cake\Database\Driver\Mysql
+
+    networks:
+      - app_network
+
+volumes:
+  monitoring:
+  mysql_data:
+  passbolt_data:
+
+networks:
+  app_network:
