@@ -16,6 +16,6 @@ app.get('/', (_req: Request, res: Response) => {
     res.json({ message: 'Service monitor is running!' })
 })
 
-app.get('/api/monitor', monitorHandler)
+app.get('/api/v1/monitor', monitorHandler)
 
 export default app
