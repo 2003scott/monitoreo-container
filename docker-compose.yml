@@ -1,7 +1,10 @@
+version: "3.8"
+
 services:
   checkmk:
     image: checkmk/check-mk-community:2.5.0p2
     container_name: monitoring
+    restart: always
     ports:
       - "8080:5000"
       - "8000:8000"
@@ -11,11 +14,13 @@ services:
       - monitoring:/omd/sites
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: always
+    networks:
+      - app_network
 
   mysql:
     image: mysql:8.0
     container_name: mysql
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: appdb
@@ -25,22 +30,20 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    restart: always
+    networks:
+      - app_network
 
   passbolt_db:
     image: mariadb:10.11
     container_name: passbolt_db
     restart: always
-
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: passbolt
       MYSQL_USER: passbolt
       MYSQL_PASSWORD: passboltpass
-
     volumes:
       - passbolt_data:/var/lib/mysql
-
     networks:
       - app_network
 
@@ -48,24 +51,50 @@ services:
     image: passbolt/passbolt:latest-ce
     container_name: passbolt_app
     restart: always
-
     depends_on:
       - passbolt_db
-
     ports:
       - "9797:80"
-
     environment:
       APP_FULL_BASE_URL: http://localhost:9797
-
       DATASOURCES_DEFAULT_HOST: passbolt_db
       DATASOURCES_DEFAULT_USERNAME: passbolt
       DATASOURCES_DEFAULT_PASSWORD: passboltpass
       DATASOURCES_DEFAULT_DATABASE: passbolt
-      DATASOURCES_DEFAULT_DRIVER: Cake\Database\Driver\Mysql
-
+      DATASOURCES_DEFAULT_DRIVER: 'Cake\Database\Driver\Mysql'
     networks:
       - app_network
+
+  backend:
+    build: ./backend
+    container_name: backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - app_network
+    depends_on:
+      - mysql
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - HOST=0.0.0.0
+    networks:
+      - app_network
+    depends_on:
+      - backend
 
 volumes:
   monitoring:

@@ -6,6 +6,7 @@ import path from "path";
 // https://vite.dev/config/
 export default defineConfig({
   server: {
+    host: process.env.HOST || '0.0.0.0',
     port: 5173,
     open: true,
   },

@@ -1,7 +1,23 @@
-# Minimal image wrapper to allow custom scripts inside Checkmk.
-ARG CMK_IMAGE=checkmk/check-mk-raw:2.2.0-latest
-FROM ${CMK_IMAGE}
+FROM node:20-alpine AS builder
 
-# Optional: place custom scripts in ./esi and they will be available at /opt/esi
-# If no scripts are mounted, this directory can remain empty.
-RUN mkdir -p /opt/esi
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . ./
+RUN npm run build
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/build ./build
+
+ENV PORT=3000
+EXPOSE 3000
+
+CMD ["node","build/index.js"]
