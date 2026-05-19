@@ -11,7 +11,7 @@ function parseDockerStats(stdout: string): DockerContainerStats[] {
 }
 
 export function getDockerContainerStats(): Promise<DockerContainerStats[]> {
-    const comando = 'sudo docker stats --no-stream --format "{{json .}}"';
+    const comando = 'docker stats --no-stream --format "{{json .}}"';
 
     return new Promise((resolve, reject) => {
         exec(comando, (error, stdout, stderr) => {
