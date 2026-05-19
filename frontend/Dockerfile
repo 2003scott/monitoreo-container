@@ -17,7 +17,6 @@ EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
 
-## Dev stage: image to run `npm run dev` inside container
 FROM node:20-alpine AS dev
 
 WORKDIR /app
