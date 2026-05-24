@@ -33,6 +33,20 @@ services:
     networks:
       - app_network
 
+  mysql_mirror:
+    image: mysql:8.0
+    container_name: mysql_mirror # Importante para la comunicación
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: appdb      # Igual que la principal
+      MYSQL_USER: cmk            # Igual que la principal
+      MYSQL_PASSWORD: cmkpass    # Igual que la principal
+    volumes:
+      - mysql_mirror_data:/var/lib/mysql # ¡Crucial para no perder el espejo!
+    networks:
+      - app_network
+
   passbolt_db:
     image: mariadb:10.11
     container_name: passbolt_db
@@ -72,7 +86,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+     - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -80,6 +94,7 @@ services:
       - app_network
     depends_on:
       - mysql
+      - mysql_mirror
 
   frontend:
     build:
@@ -104,6 +119,7 @@ volumes:
   monitoring:
   mysql_data:
   passbolt_data:
+  mysql_mirror_data:
 
 networks:
   app_network:
