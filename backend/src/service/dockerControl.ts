@@ -1,6 +1,5 @@
 import Docker from 'dockerode';
 
-// Se conecta al socket que mapearemos en el docker-compose
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 export async function toggleContainer(containerName: string, action: 'start' | 'stop') {

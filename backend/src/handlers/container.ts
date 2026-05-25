@@ -1,24 +1,20 @@
 import { Request, Response } from 'express';
-import { executeQuery } from '../service/dbService'; // Tu balanceador de escritura dual
+import { executeQuery } from '../service/dbService';
 import nodemailer from 'nodemailer';
 
-// 1. Configuración del transportador de correo
-// Nota: Si usas Gmail, debes generar una "Contraseña de aplicación" en tu cuenta de Google
 const transporter = nodemailer.createTransport({
-    host: 'mail.condominiovilladelsur.com', // Por lo general es mail. seguido de tu dominio
-    port: 465,                   // El puerto seguro estándar de cPanel para SSL
-    secure: true,                // true para puerto 465, false para puerto 587
+    host: 'mail.condominiovilladelsur.com',
+    port: 465,
+    secure: true,
     auth: {
-        user: 'pruebadocker@condominiovilladelsur.com', // El correo completo que creaste en cPanel
-        pass: '.?Hn8adQ=75v$HBa' // La contraseña normal de ese correo
+        user: 'pruebadocker@condominiovilladelsur.com',
+        pass: '.?Hn8adQ=75v$HBa'
     },
     tls: {
-        // Esto evita errores si tu cPanel tiene un certificado SSL autofirmado
         rejectUnauthorized: false 
     }
 });
 
-// 2. Función encargada de enviar la alerta por correo electrónico
 async function enviarAlertaCorreo(containerName: string) {
     const mailOptions = {
         from: '"Monitor de Infraestructura 🚀" <pruebadocker@condominiovilladelsur.com>',
@@ -55,28 +51,19 @@ async function enviarAlertaCorreo(containerName: string) {
     }
 }
 
-// 3. Tu Handler de control de contenedores actualizado
 export async function containerActionHandler(req: Request, res: Response) {
-    const { name, action } = req.params; // 'start' o 'stop'
+    const { name, action } = req.params;
 
     try {
-        // --- AQUÍ VA TU LÓGICA ACTUAL PARA APAGAR/PRENDER EL CONTENEDOR EN DOCKER ---
-        // (Por ejemplo: usar dockerode o child_process para ejecutar 'docker stop/start')
-        // ----------------------------------------------------------------------------
+        const isTrueStatus = action === 'start';
 
-        // A. Convertimos la acción en un valor Booleano para la Base de Datos
-        const isTrueStatus = action === 'start'; // true si se enciende, false si se apaga
-
-        // B. Guardamos en la tabla historial_estados (Se clona en Principal y Espejo gracias a executeQuery)
         await executeQuery(
             "INSERT INTO historial_estados (contenedor, activo) VALUES (?, ?)", 
             [name, isTrueStatus]
         );
 
-        // C. Si la acción ejecutada fue apagar ('stop'), disparamos el correo electrónico
         if (action === 'stop') {
-            // No usamos 'await' aquí para que la API responda rápido a la web sin esperar el envío del mail
-          enviarAlertaCorreo(name as string);
+            enviarAlertaCorreo(name as string);
         }
 
         return res.json({ status: `Contenedor ${name} procesado con acción: ${action}` });
