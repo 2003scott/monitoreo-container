@@ -4,18 +4,25 @@ import { toggleContainer } from '../service/dockerControl';
 import { env } from '../config/env';
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_SECURE,
-    auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASS
-    },
-    tls: {
-        rejectUnauthorized: false 
+function getTransporter() {
+    if (!env.SMTP_HOST) {
+        console.warn('SMTP: No SMTP_HOST configurado; se omitirán los envíos de correo.');
+        return null as unknown as nodemailer.Transporter;
     }
-});
+
+    return nodemailer.createTransport({
+        host: env.SMTP_HOST,
+        port: env.SMTP_PORT,
+        secure: env.SMTP_SECURE,
+        auth: {
+            user: env.SMTP_USER,
+            pass: env.SMTP_PASS
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
+}
 
 async function enviarAlertaCorreo(containerName: string) {
     const mailOptions = {
@@ -46,8 +53,15 @@ async function enviarAlertaCorreo(containerName: string) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log(`📧 Alerta de correo enviada con éxito a chezcovalladares@gmail.com`);
+        const transporterInstance = getTransporter();
+        if (!transporterInstance) {
+            console.warn('SMTP: transporter no configurado, correo no enviado. Verifica backend/.env o docker-compose env_file.');
+            return;
+        }
+
+        console.log(`SMTP: enviando correo usando ${env.SMTP_HOST}:${env.SMTP_PORT} (secure=${env.SMTP_SECURE})`);
+        await transporterInstance.sendMail(mailOptions);
+        console.log(`📧 Alerta de correo enviada con éxito a ${env.ALERT_EMAIL_TO}`);
     } catch (error) {
         console.error("❌ Error al enviar el correo de alerta:", error);
     }
