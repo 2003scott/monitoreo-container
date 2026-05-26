@@ -20,7 +20,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: mysql
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: appdb
@@ -43,7 +43,7 @@ services:
   mysql_mirror:
     image: mysql:8.0
     container_name: mysql_mirror
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
       MYSQL_DATABASE: appdb   
