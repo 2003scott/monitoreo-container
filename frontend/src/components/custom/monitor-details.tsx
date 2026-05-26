@@ -1,8 +1,10 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { NormalizedMonitorItem } from "@/components/custom/monitor-types"
 import { formatBytes } from "@/components/custom/monitor-utils"
 import { cn } from "@/lib/utils"
+import { http } from "@/service"
 
 type MonitorDetailsProps = {
   items: NormalizedMonitorItem[]
@@ -23,6 +25,7 @@ const ALL_CONTAINERS = [
 
 const MonitorDetails = ({ items, selectedId, onSelect }: MonitorDetailsProps) => {
   const [loadingContainer, setLoadingContainer] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   // Función para encender/apagar
   const handleToggle = async (e: React.MouseEvent, containerName: string, isRunning: boolean) => {
@@ -31,9 +34,8 @@ const MonitorDetails = ({ items, selectedId, onSelect }: MonitorDetailsProps) =>
     const action = isRunning ? 'stop' : 'start';
     
     try {
-      await fetch(`http://localhost:3000/api/v1/containers/${containerName}/${action}`, {
-        method: 'POST',
-      });
+      await http.post(`/containers/${containerName}/${action}`);
+      await queryClient.invalidateQueries({ queryKey: ["/monitor"] });
     } catch (error) {
       console.error(`Error ejecutando ${action} en ${containerName}:`, error);
     } finally {
@@ -78,6 +80,7 @@ const MonitorDetails = ({ items, selectedId, onSelect }: MonitorDetailsProps) =>
                     
                     {/* BOTÓN INDIVIDUAL AL LADO DE CADA CONTENEDOR */}
                     <button
+                      type="button"
                       onClick={(e) => handleToggle(e, containerName, isRunning)}
                       disabled={loadingContainer === containerName}
                       className={cn(

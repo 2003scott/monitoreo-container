@@ -7,8 +7,13 @@ export async function monitorHandler(_req: Request, res: Response): Promise<Resp
         const contenedores = await getDockerContainerStats();
         
         const datosEnTexto = JSON.stringify(contenedores);
-        
-        await executeQuery("INSERT INTO registros (dato) VALUES (?)", [datosEnTexto]);
+
+        try {
+            await executeQuery("INSERT INTO registros (dato) VALUES (?)", [datosEnTexto]);
+        } catch (dbError) {
+            const message = dbError instanceof Error ? dbError.message : 'Error al guardar métricas en BD';
+            console.error("⚠️ No se pudieron guardar las métricas, pero se devolverán igual:", message);
+        }
 
         return res.json(contenedores);
     } catch (error) {

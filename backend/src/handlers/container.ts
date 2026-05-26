@@ -1,14 +1,16 @@
 import { Request, Response } from 'express';
 import { executeQuery } from '../service/dbService';
+import { toggleContainer } from '../service/dockerControl';
+import { env } from '../config/env';
 import nodemailer from 'nodemailer';
 
 const transporter = nodemailer.createTransport({
-    host: 'mail.condominiovilladelsur.com',
-    port: 465,
-    secure: true,
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    secure: env.SMTP_SECURE,
     auth: {
-        user: 'pruebadocker@condominiovilladelsur.com',
-        pass: '.?Hn8adQ=75v$HBa'
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASS
     },
     tls: {
         rejectUnauthorized: false 
@@ -17,8 +19,8 @@ const transporter = nodemailer.createTransport({
 
 async function enviarAlertaCorreo(containerName: string) {
     const mailOptions = {
-        from: '"Monitor de Infraestructura 🚀" <pruebadocker@condominiovilladelsur.com>',
-        to: 'chezcovalladares@gmail.com',
+        from: env.SMTP_FROM,
+        to: env.ALERT_EMAIL_TO,
         subject: `🚨 ALERTA CRÍTICA: Contenedor [${containerName}] APAGADO`,
         html: `
             <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ecc; border-radius: 5px; background-color: #fff5f5;">
@@ -53,22 +55,32 @@ async function enviarAlertaCorreo(containerName: string) {
 
 export async function containerActionHandler(req: Request, res: Response) {
     const { name, action } = req.params;
+    const containerName = Array.isArray(name) ? name[0] : name;
+    const containerAction = Array.isArray(action) ? action[0] : action;
 
     try {
-        const isTrueStatus = action === 'start';
+        if (!containerName || !containerAction || (containerAction !== 'start' && containerAction !== 'stop')) {
+            return res.status(400).json({ error: 'Acción inválida. Usa start o stop.' });
+        }
+
+        const dockerResult = await toggleContainer(containerName, containerAction);
+        const isTrueStatus = containerAction === 'start';
 
         await executeQuery(
             "INSERT INTO historial_estados (contenedor, activo) VALUES (?, ?)", 
-            [name, isTrueStatus]
+            [containerName, isTrueStatus]
         );
 
-        if (action === 'stop') {
-            enviarAlertaCorreo(name as string);
+        if (containerAction === 'stop') {
+            enviarAlertaCorreo(containerName);
         }
 
-        return res.json({ status: `Contenedor ${name} procesado con acción: ${action}` });
+        return res.json({
+            status: `Contenedor ${containerName} procesado con acción: ${containerAction}`,
+            docker: dockerResult,
+        });
     } catch (error) {
-        console.error(`Error al procesar acción ${action} en ${name}:`, error);
+        console.error(`Error al procesar acción ${containerAction} en ${containerName}:`, error);
         return res.status(500).json({ error: 'Error interno al procesar el contenedor' });
     }
 }
