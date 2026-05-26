@@ -13,7 +13,8 @@ export async function executeQuery(sql: string, params?: any[]) {
         try {
             return await poolMaster.execute(sql, params);
         } catch (error) {
-            console.error("⚠️ Leyendo desde ESPEJO (Principal caído)...");
+            const message = error instanceof Error ? error.message : String(error);
+            console.error("⚠️ Leyendo desde ESPEJO (falló Principal):", message);
             return await poolMirror.execute(sql, params);
         }
     }
@@ -25,7 +26,8 @@ export async function executeQuery(sql: string, params?: any[]) {
         resultadoFinal = await poolMaster.execute(sql, params);
         guardadoExitoso++;
     } catch (error) {
-        console.error("⚠️ No se pudo guardar en Principal.");
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("⚠️ No se pudo guardar en Principal:", message);
     }
 
     try {
@@ -35,7 +37,8 @@ export async function executeQuery(sql: string, params?: any[]) {
         }
         guardadoExitoso++;
     } catch (error) {
-        console.error("⚠️ No se pudo guardar en Espejo.");
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("⚠️ No se pudo guardar en Espejo:", message);
     }
 
     if (guardadoExitoso === 0) {

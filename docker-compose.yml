@@ -30,20 +30,34 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
     networks:
       - app_network
 
   mysql_mirror:
     image: mysql:8.0
-    container_name: mysql_mirror # Importante para la comunicación
+    container_name: mysql_mirror
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: appdb      # Igual que la principal
-      MYSQL_USER: cmk            # Igual que la principal
-      MYSQL_PASSWORD: cmkpass    # Igual que la principal
+      MYSQL_DATABASE: appdb   
+      MYSQL_USER: cmk          
+      MYSQL_PASSWORD: cmkpass   
     volumes:
-      - mysql_mirror_data:/var/lib/mysql # ¡Crucial para no perder el espejo!
+      - mysql_mirror_data:/var/lib/mysql 
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 25s
     networks:
       - app_network
 
@@ -93,8 +107,10 @@ services:
     networks:
       - app_network
     depends_on:
-      - mysql
-      - mysql_mirror
+      mysql:
+        condition: service_healthy
+      mysql_mirror:
+        condition: service_healthy
 
   frontend:
     build:
