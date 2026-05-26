@@ -35,10 +35,8 @@ const MonitorDetails = ({ items }: MonitorDetailsProps) => {
       await http.post(`/containers/${containerName}/${action}`);
       // Refresca métricas generales
       await queryClient.invalidateQueries({ queryKey: ["/monitor"] });
-      // Si la acción afecta las bases de datos principales, refrescar la tabla de snapshot
-      if (containerName === 'mysql' || containerName === 'mysql_mirror') {
-        await queryClient.invalidateQueries({ queryKey: ["/databases"] });
-      }
+      // La tabla de DB también debe refrescarse porque cada toggle guarda historial
+      await queryClient.invalidateQueries({ queryKey: ["/databases"] });
     } catch (error) {
       console.error(`Error ejecutando ${action} en ${containerName}:`, error);
     } finally {
