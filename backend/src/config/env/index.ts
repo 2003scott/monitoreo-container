@@ -4,6 +4,7 @@ config()
 
 export const env = {
     PORT: process.env.PORT || 3000,
+    SMTP_SERVICE: process.env.SMTP_SERVICE || '',
     SMTP_HOST: process.env.SMTP_HOST || '',
     SMTP_PORT: Number(process.env.SMTP_PORT || 465),
     SMTP_SECURE: process.env.SMTP_SECURE === 'true',
