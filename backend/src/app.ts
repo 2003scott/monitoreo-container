@@ -4,6 +4,7 @@ import cors from 'cors'
 
 import { monitorHandler, historialHandler } from './handlers/monitor'
 import { containerActionHandler } from './handlers/container' 
+import { databaseSnapshotHandler } from './handlers/database'
 
 const app = express()
 
@@ -21,6 +22,8 @@ app.get('/', (_req: Request, res: Response) => {
 app.get('/api/v1/monitor', monitorHandler)
 
 app.get('/api/v1/historial', historialHandler)
+
+app.get('/api/v1/databases', databaseSnapshotHandler)
 
 app.post('/api/v1/containers/:name/:action', containerActionHandler)
 

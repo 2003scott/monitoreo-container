@@ -8,8 +8,6 @@ import { http } from "@/service"
 
 type MonitorDetailsProps = {
   items: NormalizedMonitorItem[]
-  selectedId?: string
-  onSelect?: (id: string) => void
 }
 
 // TU LISTA MAESTRA DE CONTENEDORES
@@ -23,7 +21,7 @@ const ALL_CONTAINERS = [
   'monitoring'
 ];
 
-const MonitorDetails = ({ items, selectedId, onSelect }: MonitorDetailsProps) => {
+const MonitorDetails = ({ items }: MonitorDetailsProps) => {
   const [loadingContainer, setLoadingContainer] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -61,11 +59,9 @@ const MonitorDetails = ({ items, selectedId, onSelect }: MonitorDetailsProps) =>
             return (
               <div
                 key={containerName}
-                onClick={() => isRunning && activeItem && onSelect?.(activeItem.ID)}
                 className={cn(
                   "flex flex-col gap-2 rounded-md border border-border/60 px-3 py-3 transition-colors",
-                  isRunning ? "hover:border-border cursor-pointer bg-card" : "bg-muted/30 opacity-80", // Opaco si está apagado
-                  selectedId === activeItem?.ID && "border-primary/60 bg-primary/5"
+                  isRunning ? "bg-card" : "bg-muted/30 opacity-80"
                 )}
               >
                 {/* CABECERA DE CADA TARJETA (Nombre + Métricas + Botón) */}
